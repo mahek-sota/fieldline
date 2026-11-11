@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fieldline Site Report</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0: #f4f3f0;
+    --surface-1: #fcfcfb;
+    --border: #e2e1dc;
+    --grid: #ebeae6;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #7a7974;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --critical: #d03b3b;
+    --ref: #8a8984;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-0: #111110;
+      --surface-1: #1a1a19;
+      --border: #2e2e2c;
+      --grid: #262624;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #8d8c86;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --critical: #e66767;
+      --ref: #8d8c86;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #111110;
+    --surface-1: #1a1a19;
+    --border: #2e2e2c;
+    --grid: #262624;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8d8c86;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --critical: #e66767;
+    --ref: #8d8c86;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface-0); color: var(--text-primary);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 2px; }
+  .sub { color: var(--text-secondary); margin: 0 0 24px; }
+  .note { color: var(--text-muted); font-size: 13px; margin: 0 0 12px; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .tile, .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .tile .label { color: var(--text-secondary); font-size: 13px; }
+  .tile .value { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tile .detail { color: var(--text-muted); font-size: 13px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .card { margin-bottom: 12px; min-width: 0; }
+  .chart { position: relative; height: 240px; }
+  .chart.short { height: 150px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--text-secondary); margin: 8px 0; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+  .legend .line::before { height: 2px; border-radius: 0; vertical-align: 3px; width: 14px; }
+  .legend .dash::before { height: 2px; border-radius: 0; vertical-align: 3px; width: 16px; background: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 7px); }
+  .head { display: flex; justify-content: space-between; align-items: start; gap: 12px; flex-wrap: wrap; }
+  select { font: inherit; color: var(--text-primary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; }
+  .callout { border-left: 3px solid var(--critical); padding: 4px 12px; margin: 8px 0 12px; color: var(--text-secondary); font-size: 14px; }
+  .callout b { color: var(--text-primary); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-secondary); font-weight: 500; }
+  .tag { font-size: 12px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; margin-left: 6px; }
+  .scroll { overflow-x: auto; }
+  #error { display: none; color: var(--critical); }
+  @media (max-width: 720px) {
+    .tiles { grid-template-columns: 1fr 1fr; }
+    .row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Where does the machine lose time?</h1>
+  <p class="sub" id="sub">Simulated 5 day site. No real machine data.</p>
+  <p id="error"></p>
+
+  <div class="tiles">
+    <div class="tile"><div class="label">Units installed</div><div class="value" id="t-units">-</div><div class="detail" id="t-units-d"></div></div>
+    <div class="tile"><div class="label">Hours lost</div><div class="value" id="t-lost">-</div><div class="detail" id="t-lost-d"></div></div>
+    <div class="tile"><div class="label">Bottleneck</div><div class="value" id="t-bn">-</div><div class="detail" id="t-bn-d"></div></div>
+    <div class="tile"><div class="label">Drift warning</div><div class="value" id="t-warn">-</div><div class="detail" id="t-warn-d"></div></div>
+  </div>
+
+  <div class="row">
+    <div class="card">
+      <h2>Units installed per day</h2>
+      <p class="note">Completions at the install station.</p>
+      <div class="chart"><canvas id="c-units" aria-label="Units installed per day"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Lost time by reason</h2>
+      <div class="legend"><span style="--c: var(--series-1)">Machine fault</span><span style="--c: var(--series-2)">Waiting for material</span></div>
+      <div class="chart"><canvas id="c-lost" aria-label="Lost hours by reason"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="head">
+      <div>
+        <h2>Cycle time drift</h2>
+        <p class="note" id="method"></p>
+      </div>
+      <label class="note">Station <select id="station"></select></label>
+    </div>
+    <div id="callout"></div>
+    <div class="legend">
+      <span class="line" style="--c: var(--series-1)">Mean of 30 cycles</span>
+      <span class="dash" style="--c: var(--ref)">Day 1 baseline</span>
+      <span class="line" style="--c: var(--critical)">Alarm</span>
+      <span class="dash" style="--c: var(--critical)">Fault that fixed it</span>
+    </div>
+    <div class="chart"><canvas id="c-cycle" aria-label="Batch mean cycle time"></canvas></div>
+    <p class="note" style="margin: 12px 0 4px">CUSUM score (alarm when it crosses the dashed threshold; values above 3x the threshold are cut off)</p>
+    <div class="chart short"><canvas id="c-cusum" aria-label="CUSUM score"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h2>Stations</h2>
+    <p class="note">Load = hours processing plus hours faulted. The station with the most load holds back the line.</p>
+    <div class="scroll"><table id="stations"></table></div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const fmtDay = iso => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const fmtTime = iso => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" });
+const charts = {};
+
+async function loadReport() {
+  if (window.REPORT) return window.REPORT;      // embedded by build_static.py
+  for (const url of ["/report", "report.json"]) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) continue;
+      return await r.json();
+    } catch (e) { /* try the next source */ }
+  }
+  throw new Error(location.protocol === "file:"
+    ? "This is the development page and cannot load data from disk. Open dist/index.html instead (built by make demo or make static), or run make serve."
+    : "Could not load /report or report.json. Run make demo first.");
+}
+
+function baseOptions() {
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.color = css("--text-secondary");
+  return {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: css("--surface-1"), titleColor: css("--text-primary"),
+      bodyColor: css("--text-secondary"), borderColor: css("--border"), borderWidth: 1, padding: 10, displayColors: false } },
+    scales: {
+      x: { grid: { display: false }, border: { color: css("--border") } },
+      y: { grid: { color: css("--grid") }, border: { display: false }, beginAtZero: true },
+    },
+  };
+}
+
+// Draws vertical marker lines at given x indexes.
+const markers = {
+  id: "markers",
+  afterDatasetsDraw(chart, _, opts) {
+    const { ctx, chartArea: a, scales: { x } } = chart;
+    for (const m of opts.lines || []) {
+      const px = x.getPixelForValue(m.index);
+      ctx.save();
+      ctx.strokeStyle = m.color; ctx.lineWidth = 2; ctx.setLineDash(m.dash || []);
+      ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke();
+      ctx.restore();
+    }
+  },
+};
+
+function render(r) {
+  const lt = r.lost_time;
+  const total = r.units_per_day.reduce((s, d) => s + d.units, 0);
+  document.getElementById("sub").textContent =
+    `Simulated site, ${fmtDay(r.site.start)} to ${fmtDay(r.site.end)}, one 10 hour shift a day, ${r.site.events.toLocaleString()} events. No real machine data.`;
+  document.getElementById("t-units").textContent = total.toLocaleString();
+  document.getElementById("t-units-d").textContent = `${Math.round(total / r.units_per_day.length)} per day on average`;
+  document.getElementById("t-lost").textContent = lt.total_hours.toFixed(1);
+  document.getElementById("t-lost-d").textContent = `${lt.machine_fault_hours.toFixed(1)} faults, ${lt.waiting_for_material_hours.toFixed(1)} material`;
+  document.getElementById("t-bn").textContent = r.bottleneck.station;
+  document.getElementById("t-bn-d").textContent = `${r.bottleneck.load_hours.toFixed(1)} h processing or faulted`;
+  const alarm = r.drift.alarms.find(a => a.fixed_by_fault) || r.drift.alarms[0];
+  if (alarm && alarm.warning_hours != null) {
+    document.getElementById("t-warn").textContent = `${alarm.warning_operating_hours.toFixed(1)} h`;
+    document.getElementById("t-warn-d").textContent = `of operation before ${alarm.station} faulted (${alarm.warning_hours.toFixed(0)} h on the clock)`;
+  } else {
+    document.getElementById("t-warn").textContent = alarm ? "open" : "none";
+    document.getElementById("t-warn-d").textContent = alarm ? `${alarm.station} alarm not yet resolved` : "no drift alarms";
+  }
+
+  const o = baseOptions();
+  charts.units = new Chart(document.getElementById("c-units"), {
+    type: "bar",
+    data: { labels: r.units_per_day.map(d => fmtDay(d.date)),
+      datasets: [{ data: r.units_per_day.map(d => d.units), backgroundColor: css("--series-1"),
+        borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "bottom", maxBarThickness: 48 }] },
+    options: { ...o, plugins: { ...o.plugins, tooltip: { ...o.plugins.tooltip, callbacks: { label: c => `${c.raw} units` } } } },
+  });
+
+  const reasons = lt.by_reason;
+  charts.lost = new Chart(document.getElementById("c-lost"), {
+    type: "bar",
+    data: { labels: reasons.map(x => x.reason.replace("_", " ").toLowerCase()),
+      datasets: [{ data: reasons.map(x => x.hours),
+        backgroundColor: reasons.map(x => x.category === "machine_fault" ? css("--series-1") : css("--series-2")),
+        borderRadius: { topRight: 4, bottomRight: 4 }, borderSkipped: "left", maxBarThickness: 22 }] },
+    options: { ...o, indexAxis: "y",
+      scales: { x: { ...o.scales.y, title: { display: true, text: "hours" } }, y: { ...o.scales.x } },
+      plugins: { ...o.plugins, tooltip: { ...o.plugins.tooltip, callbacks: {
+        label: c => `${reasons[c.dataIndex].hours.toFixed(2)} h over ${reasons[c.dataIndex].count} stops` } } } },
+  });
+
+  document.getElementById("method").textContent = r.drift.method;
+  const stations = Object.keys(r.drift.series);
+  const sel = document.getElementById("station");
+  sel.innerHTML = stations.map(s => `<option>${s}</option>`).join("");
+  sel.value = alarm ? alarm.station : r.bottleneck.station;
+  sel.onchange = () => drawDrift(r, sel.value);
+  drawDrift(r, sel.value);
+
+  const rows = r.stations.map(s => `<tr><td>${s.station}${s.station === r.bottleneck.station ? '<span class="tag">bottleneck</span>' : ""}</td>
+    <td>${s.units}</td><td>${s.mean_cycle_s}</td><td>${s.busy_hours.toFixed(1)}</td><td>${s.fault_hours.toFixed(1)}</td>
+    <td>${s.material_wait_hours.toFixed(1)}</td><td>${s.load_hours.toFixed(1)}</td></tr>`).join("");
+  document.getElementById("stations").innerHTML =
+    `<tr><th>Station</th><th>Units</th><th>Mean cycle s</th><th>Busy h</th><th>Fault h</th><th>Material wait h</th><th>Load h</th></tr>${rows}`;
+}
+
+function drawDrift(r, station) {
+  const pts = r.drift.series[station];
+  const alarms = r.drift.alarms.filter(a => a.station === station);
+  const baseline = alarms[0] ? alarms[0].baseline_cycle_s : null;
+  const idxAt = ts => { const i = pts.findIndex(p => p.ts >= ts); return i < 0 ? pts.length - 1 : i; };
+  const lines = [];
+  for (const a of alarms) {
+    lines.push({ index: idxAt(a.alarm_at), color: css("--critical") });
+    if (a.fixed_by_fault) lines.push({ index: idxAt(a.fixed_by_fault.started) - 0.5, color: css("--critical"), dash: [5, 4] });
+  }
+  const labels = pts.map(p => p.ts);
+  const dayTick = (v, i) => (i === 0 || labels[i].slice(0, 10) !== labels[i - 1].slice(0, 10)) ? fmtDay(labels[i]) : "";
+  const xAxis = { grid: { display: false }, border: { color: css("--border") },
+    ticks: { autoSkip: false, maxRotation: 0, callback: dayTick } };
+  const o = baseOptions();
+  const fixWidth = axis => { axis.width = 56; };   // keeps both plots on the same x positions
+  const tip = { ...o.plugins.tooltip, mode: "index", intersect: false, callbacks: { title: items => fmtTime(labels[items[0].dataIndex]) } };
+
+  const callout = document.getElementById("callout");
+  callout.innerHTML = alarms.map(a => {
+    const fx = a.fixed_by_fault;
+    const other = a.other_faults_during_alarm.length
+      ? ` ${a.other_faults_during_alarm.length} other stops during the alarm did not bring cycle time back down.` : "";
+    return `<div class="callout">Alarm at <b>${fmtTime(a.alarm_at)}</b> (batch mean ${a.batch_mean_at_alarm_s} s vs baseline ${a.baseline_cycle_s} s). ` +
+      (fx ? `Station faulted with <b>${fx.reason}</b> at ${fmtTime(fx.started)}: <b>${a.warning_operating_hours.toFixed(1)} h</b> of operation later.` : "Still open at end of data.") +
+      other + `</div>`;
+  }).join("") || `<p class="note">No drift alarm on ${station}.</p>`;
+
+  charts.cycle && charts.cycle.destroy();
+  charts.cusum && charts.cusum.destroy();
+  const datasets = [{ data: pts.map(p => p.mean_cycle_s), borderColor: css("--series-1"), borderWidth: 2,
+    pointRadius: 0, pointHoverRadius: 4, label: "mean cycle s" }];
+  if (baseline) datasets.push({ data: pts.map(() => baseline), borderColor: css("--ref"), borderWidth: 1.5,
+    borderDash: [4, 4], pointRadius: 0, pointHitRadius: 0, label: "baseline s" });
+  charts.cycle = new Chart(document.getElementById("c-cycle"), {
+    type: "line", data: { labels, datasets },
+    options: { ...o, interaction: { mode: "index", intersect: false },
+      scales: { x: xAxis, y: { ...o.scales.y, beginAtZero: false, afterFit: fixWidth, title: { display: true, text: "seconds" } } },
+      plugins: { ...o.plugins, markers: { lines }, tooltip: { ...tip, callbacks: { ...tip.callbacks,
+        label: c => `${c.dataset.label}: ${c.raw.toFixed(1)}` } } } },
+    plugins: [markers],
+  });
+  const h = parseFloat((r.drift.method.match(/h = ([\d.]+)/) || [])[1] || "5");
+  charts.cusum = new Chart(document.getElementById("c-cusum"), {
+    type: "line",
+    data: { labels, datasets: [
+      { data: pts.map(p => p.cusum), borderColor: css("--series-1"), borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, label: "CUSUM" },
+      { data: pts.map(() => h), borderColor: css("--critical"), borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, pointHitRadius: 0, label: "threshold" },
+    ] },
+    options: { ...o, interaction: { mode: "index", intersect: false },
+      scales: { x: xAxis, y: { ...o.scales.y, max: 3 * h, afterFit: fixWidth, ticks: { stepSize: h } } },
+      plugins: { ...o.plugins, markers: { lines }, tooltip: { ...tip, callbacks: { ...tip.callbacks,
+        label: c => `${c.dataset.label}: ${c.raw.toFixed(1)}` } } } },
+    plugins: [markers],
+  });
+}
+
+loadReport().then(render).catch(e => {
+  const el = document.getElementById("error");
+  el.style.display = "block";
+  el.textContent = e.message;
+});
+</script>
+</body>
+</html>

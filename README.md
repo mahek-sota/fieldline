@@ -26,7 +26,7 @@ make test     # the three tests
 
 If port 8742 is taken, use `make demo PORT=9000` (same for `serve`).
 
-To share the page, run `make static` and deploy `dist/index.html` anywhere that serves static files (for example `cd dist && npx vercel`), or send the file itself. It needs no API and no other files; it only loads the chart library from a CDN.
+To share the page, run `make static` and commit `dist/`. `vercel.json` tells Vercel to serve `dist/` as is with no build step, so importing the repo on Vercel is enough. `dist/index.html` also works on its own as a single file; it only loads the chart library from a CDN.
 
 ## Design decisions
 

@@ -41,4 +41,4 @@ test: .venv/done
 	$(PY) -m pytest -q tests
 
 clean:
-	rm -rf data dist web/report.json
+	rm -rf data web/report.json dist/index.html

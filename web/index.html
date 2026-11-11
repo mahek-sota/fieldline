@@ -83,6 +83,58 @@
   .tag { font-size: 12px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; margin-left: 6px; }
   .scroll { overflow-x: auto; }
   #error { display: none; color: var(--critical); }
+  .eyebrow { color: var(--text-muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 8px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: 0 0 24px; }
+  .tabs button {
+    font: inherit; font-size: 14px; font-weight: 500; color: var(--text-secondary); background: none; border: 0;
+    padding: 10px 14px; margin-bottom: -1px; border-bottom: 2px solid transparent; cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .tabs button:hover { color: var(--text-primary); }
+  .tabs button[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--series-1); }
+  .tabs button:focus-visible { outline: 2px solid var(--series-1); outline-offset: -2px; border-radius: 4px; }
+  .panel[hidden] { display: none; }
+  .panel { animation: rise .28s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .panel { animation: none; } .tabs button { transition: none; } }
+
+  .about h3 { font-size: 13px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; margin: 32px 0 12px; }
+  .about p { margin: 0; color: var(--text-secondary); }
+  .about b { color: var(--text-primary); font-weight: 600; }
+  .lede { font-size: 17px; line-height: 1.6; color: var(--text-secondary); max-width: 70ch; margin: 0; }
+  .grid { display: grid; gap: 12px; }
+  .grid.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid.steps { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .grid.learned { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .about .card { margin: 0; transition: border-color .15s ease, transform .15s ease; }
+  .about .card:hover { border-color: var(--text-muted); transform: translateY(-2px); }
+  .why .card { border-top: 3px solid var(--series-1); }
+  .why .card h4 { margin: 0 0 8px; font-size: 16px; }
+  .why ul { margin: 0; padding-left: 18px; color: var(--text-secondary); }
+  .why li { margin-bottom: 8px; }
+  .why li:last-child { margin-bottom: 0; }
+  .why li::marker { color: var(--series-1); }
+  .step .n {
+    display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--series-1); color: #fff; font-size: 13px; font-weight: 600; margin-bottom: 10px;
+  }
+  .step b { display: block; margin-bottom: 4px; }
+  .step p { font-size: 14px; }
+  .lesson .stat { font-size: 24px; font-weight: 650; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .lesson .stat small { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+  .lesson b { display: block; margin: 6px 0 4px; }
+  .lesson p { font-size: 14px; }
+  .cta { margin-top: 28px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--text-secondary); font-size: 14px; }
+  .cta-top { margin-top: 20px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .links a {
+    color: var(--text-primary); font-weight: 600; text-decoration: none; font-size: 14px;
+    border: 1px solid var(--border); border-radius: 6px; padding: 7px 12px; background: var(--surface-1);
+    transition: border-color .15s ease;
+  }
+  .links a:hover { border-color: var(--series-1); }
+  .links a:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .cta button { font: inherit; font-size: 14px; color: #fff; background: var(--series-1); border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; }
   @media (max-width: 720px) {
     .tiles { grid-template-columns: 1fr 1fr; }
     .row { grid-template-columns: 1fr; }
@@ -91,8 +143,16 @@
 </head>
 <body>
 <main>
+  <p class="eyebrow">Fieldline &middot; A field operations prototype inspired by Charge Robotics</p>
   <h1>Where does the machine lose time?</h1>
   <p class="sub" id="sub">Simulated 5 day site. No real machine data.</p>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-about" aria-controls="panel-about" aria-selected="true" data-tab="about">Why I built this</button>
+    <button role="tab" id="tab-report" aria-controls="panel-report" aria-selected="false" data-tab="report" tabindex="-1">Report</button>
+  </nav>
+
+  <div class="panel" id="panel-report" role="tabpanel" aria-labelledby="tab-report" hidden>
   <p id="error"></p>
 
   <div class="tiles">
@@ -139,6 +199,78 @@
     <h2>Stations</h2>
     <p class="note">Load = hours processing plus hours faulted. The station with the most load holds back the line.</p>
     <div class="scroll"><table id="stations"></table></div>
+  </div>
+  </div>
+
+  <div class="panel about" id="panel-about" role="tabpanel" aria-labelledby="tab-about">
+    <p class="lede">I’m <b>Mahek Sota, a software engineer at the University of Mississippi</b>. Charge’s Hacker News post got me thinking about what happens once a mobile solar factory is running on a job site. If installation slows down, how does the crew tell whether a machine faulted, materials arrived late, or a station has been getting slower over several shifts? I built <b>Fieldline</b> to explore that question with five days of simulated site data.</p>
+
+    <div class="cta cta-top">
+      <button type="button" data-goto="report">See the report</button>
+      <nav class="links" aria-label="Links (top)">
+        <a href="Mahek_Sota_Resume.pdf" target="_blank" rel="noopener">Resume</a>
+        <a href="https://impact-doc.vercel.app/" target="_blank" rel="noopener">Impact doc</a>
+        <a href="https://www.linkedin.com/in/mahek-sota/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/mahek-sota" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/mahek-sota/fieldline" target="_blank" rel="noopener">Fieldline source code</a>
+      </nav>
+    </div>
+
+    <div class="grid two why" style="margin-top: 24px">
+      <div class="card">
+        <h4>Why Charge Robotics</h4>
+        <ul>
+          <li><b>Build solar faster.</b> I was surprised that installation could hold back solar deployment, and I want to help tackle that bottleneck.</li>
+          <li><b>See software work in the field.</b> I’d love to see a tool I built help a crew figure out why the line slowed down.</li>
+          <li><b>Build with operators.</b> I want to learn what crews need during a shift and improve the tools based on their feedback.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>What I’d bring to Charge</h4>
+        <ul>
+          <li><b>Reliable data pipelines.</b> I’ve built Python, Kafka, and PostgreSQL pipelines that processed <b>50M+ records</b>.</li>
+          <li><b>Tools for troubleshooting.</b> Fieldline shows where time went and which station started slowing down.</li>
+          <li><b>End-to-end ownership.</b> At Ole Miss, I work directly with users and own tools from scoping through deployment and support.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>How I approached it</h3>
+    <div class="grid steps">
+      <div class="card step"><span class="n">1</span><b>One question</b><p>Where does the machine lose time? Every chart answers part of it.</p></div>
+      <div class="card step"><span class="n">2</span><b>Simulate, and say so</b><p>Seeded model of four stations, random faults, late parts, one wearing station.</p></div>
+      <div class="card step"><span class="n">3</span><b>Assume the network fails</b><p>Local outbox, batched upload, replay after an outage, server ignores repeats.</p></div>
+      <div class="card step"><span class="n">4</span><b>Explainable analysis</b><p>CUSUM on cycle times, so every alarm traces back to numbers a technician can check.</p></div>
+      <div class="card step"><span class="n">5</span><b>Keep it small</b><p>One weekend and three tests that matter.</p></div>
+    </div>
+
+    <h3>What I learned</h3>
+    <div class="grid learned">
+      <div class="card lesson" id="learn-material"><div class="stat"><span data-k="material_h">-</span> h <small>waiting for parts</small></div>
+        <b>The machine is not the only thing to fix</b><p>Late material cost more time than any single fault type.</p></div>
+      <div class="card lesson" id="learn-bottleneck"><div class="stat" data-k="bottleneck">-</div>
+        <b>The spec sheet does not name the bottleneck</b><p><span data-k="slowest">-</span> has the longest cycle, but wear and faults made <span data-k="bottleneck">-</span> the station the line waited on.</p></div>
+      <div class="card lesson"><div class="stat">0 <small>false alarms in 12 seeds</small></div>
+        <b>Textbook settings were too tight</b><p>The day 1 baseline is itself noisy, so the usual CUSUM slack alarmed on healthy stations. I widened it and checked across seeds.</p></div>
+      <div class="card lesson" id="learn-alarm"><div class="stat"><span data-k="other_stops">-</span> <small>unrelated stops</small></div>
+        <b>An alarm is not a diagnosis</b><p>Other faults happened while the station wore out. The signal was which repair brought cycle time back to normal.</p></div>
+      <div class="card lesson" id="learn-hours"><div class="stat"><span data-k="op_h">-</span> h <small>of <span data-k="clock_h">-</span> h on the clock</small></div>
+        <b>Pick the hours that matter</b><p>Operating hours of warning, not wall-clock hours, are what a crew can plan around.</p></div>
+      <div class="card lesson"><div class="stat">2x sent <small>1x stored</small></div>
+        <b>Duplicates are the normal case</b><p>Once a reply can be lost, resending is the only safe choice, so the server makes resends harmless.</p></div>
+    </div>
+
+    <div class="cta">
+      <button type="button" data-goto="report">See the report</button>
+      <nav class="links" aria-label="Links">
+        <a href="Mahek_Sota_Resume.pdf" target="_blank" rel="noopener">Resume</a>
+        <a href="https://impact-doc.vercel.app/" target="_blank" rel="noopener">Impact doc</a>
+        <a href="https://www.linkedin.com/in/mahek-sota/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/mahek-sota" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/mahek-sota/fieldline" target="_blank" rel="noopener">Fieldline source code</a>
+      </nav>
+    </div>
+    <p class="note" style="margin-top: 12px">All data on this page is simulated.</p>
   </div>
 </main>
 
@@ -212,6 +344,8 @@ function render(r) {
     document.getElementById("t-warn-d").textContent = alarm ? `${alarm.station} alarm not yet resolved` : "no drift alarms";
   }
 
+  fillIntro(r, alarm);
+
   const o = baseOptions();
   charts.units = new Chart(document.getElementById("c-units"), {
     type: "bar",
@@ -247,6 +381,33 @@ function render(r) {
     <td>${s.material_wait_hours.toFixed(1)}</td><td>${s.load_hours.toFixed(1)}</td></tr>`).join("");
   document.getElementById("stations").innerHTML =
     `<tr><th>Station</th><th>Units</th><th>Mean cycle s</th><th>Busy h</th><th>Fault h</th><th>Material wait h</th><th>Load h</th></tr>${rows}`;
+}
+
+// Fills the numbers in "What I learned" from the report, and hides a point
+// if this run's data does not support it.
+function fillIntro(r, alarm) {
+  const set = (k, v) => document.querySelectorAll(`[data-k="${k}"]`).forEach(el => { el.textContent = v; });
+  const hide = id => { document.getElementById(id).style.display = "none"; };
+
+  const top = r.lost_time.by_reason[0];
+  if (top && top.category === "waiting_for_material") set("material_h", top.hours.toFixed(1));
+  else hide("learn-material");
+
+  const slowest = r.stations.reduce((a, b) => (b.mean_cycle_s > a.mean_cycle_s ? b : a));
+  if (slowest.station !== r.bottleneck.station) {
+    set("slowest", slowest.station.charAt(0).toUpperCase() + slowest.station.slice(1));
+    set("bottleneck", r.bottleneck.station);
+  } else hide("learn-bottleneck");
+
+  if (alarm && alarm.fixed_by_fault) {
+    const n = alarm.other_faults_during_alarm.length;
+    if (n > 0) set("other_stops", n === 1 ? "One" : String(n)); else hide("learn-alarm");
+    set("clock_h", alarm.warning_hours.toFixed(0));
+    set("op_h", alarm.warning_operating_hours.toFixed(0));
+  } else {
+    hide("learn-alarm");
+    hide("learn-hours");
+  }
 }
 
 function drawDrift(r, station) {
@@ -305,6 +466,34 @@ function drawDrift(r, station) {
     plugins: [markers],
   });
 }
+
+// Tabs: Why I built this (default) and Report. The URL hash (#report or #about) picks the tab.
+function showTab(name, push) {
+  if (!document.getElementById(`panel-${name}`)) name = "about";
+  document.querySelectorAll('[role="tab"]').forEach(t => {
+    const on = t.dataset.tab === name;
+    t.setAttribute("aria-selected", on);
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById(`panel-${t.dataset.tab}`).hidden = !on;
+  });
+  if (push) history.replaceState(null, "", `#${name}`);
+  if (name === "report") Object.values(charts).forEach(c => c && c.resize());
+}
+document.querySelectorAll('[role="tab"]').forEach(t => {
+  t.addEventListener("click", () => showTab(t.dataset.tab, true));
+  t.addEventListener("keydown", e => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const next = t.dataset.tab === "report" ? "about" : "report";
+    showTab(next, true);
+    document.getElementById(`tab-${next}`).focus();
+  });
+});
+document.querySelectorAll("[data-goto]").forEach(b => b.addEventListener("click", () => {
+  showTab(b.dataset.goto, true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}));
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+showTab(location.hash.slice(1) || "about");
 
 loadReport().then(render).catch(e => {
   const el = document.getElementById("error");

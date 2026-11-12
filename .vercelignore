@@ -1,0 +1,5 @@
+# Vercel only needs the built page. Without this, the api/ folder would be
+# deployed as Python serverless functions.
+/*
+!/dist
+!/vercel.json
